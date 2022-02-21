@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,10 +47,13 @@ namespace Server.Controllers.CardsController
         {
             if (card.ImageData != null)
             {
-                try { 
-                    card.ImageSrc = this.Fdb.createPicture(card.ImageData);
-                    card.ImageData = null;
-                    if (card.isValid() && this.db.createCard(card)) return new OkResult();
+                try {
+                    if (card.isValid())
+                    {
+                        card.ImageSrc = this.Fdb.createPicture(card.ImageData);
+                        card.ImageData = null;
+                        if (this.db.createCard(card)) return new OkResult();
+                    }  
                 }
                 catch(Exception) { return new BadRequestResult(); }  
             }
@@ -62,16 +65,22 @@ namespace Server.Controllers.CardsController
         [Route("update")]
         public IActionResult Update(ProductCard card)
         {
-            if (card.ImageData != null)
-            {
+            
                 try{
-                    this.Fdb.updatePicture(card.ImageSrc, card.ImageData);
-                    card.ImageData = null;
+                    if (card.isValid())
+                    {
+                        if (card.ImageData != null)
+                        {
+                            ProductCard old = this.db.getCardById(card.ID);
+                            this.Fdb.updatePicture(old.ImageSrc, card.ImageData);
+                            card.ImageData = null;
+                        }
+                        if (this.db.updateCard(card)) return new OkResult();
+                    }  
                 }
                 catch (Exception) { return new BadRequestResult(); }
-            }
-            if (card.isValid() && this.db.updateCard(card)) return new OkResult();
-            else return new BadRequestResult();
+            
+            return new BadRequestResult();
         }
 
         // DELETE api/cards/5
